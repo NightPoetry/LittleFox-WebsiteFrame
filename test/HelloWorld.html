@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+	</head>
+	<body>
+		<div>
+			<test></test>
+		</div>
+		<script src="../app.js"></script>
+		<script>
+			let loader = new Loader();
+			let app = loader.load(document.getElementById("ok"), [{
+				name: "test",
+				update(props) {
+					let input = document.createElement("input");
+					this.static_dom = input;
+					props.id ? input.id = props.id : undefined;
+					return input;
+				},
+				style(props) {
+					let s_map = this.getStyleMap();
+					let background = s_map.getPropertyValue("background-color");
+					let ok = s_map.getPropertyValue("--test");
+					console.log(background, ok);
+				}
+			}]);
+		</script>
+	</body>
+</html>
