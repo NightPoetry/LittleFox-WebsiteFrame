@@ -69,3 +69,60 @@ In this example, we have written a custom plugin that creates a custom tag named
 5. `getNodeByFoxClass(className)`: This method is used to obtain the `App` object with the corresponding class name.
 6. `getChildrenPropsMap()`: This method is used to obtain a `Map` object that maps the `App` objects of child nodes to their corresponding `props`.
 7. `setProp(prop, value)`: This method is used to set style properties for the `DOM` element associated with the `App` object.
+## 简介：
+这是一个小而可爱的框架，对于前端而言如果仅仅是前段，那么数据只有两个方向，一个是将处理好的数据转化为html结构或者相配套的样式，二是将变化的html数据或者样式转化回数据并送往后端处理。因此这个框架可以创建各种各样的”数据容器“，可以简单的理解为自定义各种类型的html标签，让html标签更具有语义化，同时按照这些语义对处理好的数据转化为原始的html结构，以供浏览器解析。
+## 使用方法：
+1. 将项目中唯一的js文件下载下来并在你的html标签或者任何你想要的方式引入你的项目。
+2. let loader = new Loader();方法获得一个加载器。然后let app = loader.load(“你想要使用框架的根dom”,"插件列表");的方式启动框架。即将根dom和需要的插件填入load方法，此方法将会将dom加工为框架的专用dom并返回。
+3. 在使用了框架的dom下面使用你自己的html标签。
+## 样例演示：
+```
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+	</head>
+	<body>
+		<div>
+			<test></test>
+		</div>
+		<script src="../app.js"></script>
+		<script>
+			let loader = new Loader();
+			let app = loader.load(document.getElementById("ok"), [{
+				name: "test",
+				update(props) {
+					let input = document.createElement("input");
+					this.static_dom = input;
+					props.id ? input.id = props.id : undefined;
+					return input;
+				},
+				style(props) {
+					let s_map = this.getStyleMap();
+					let background = s_map.getPropertyValue("background-color");
+					let ok = s_map.getPropertyValue("--test");
+					console.log(background, ok);
+				}
+			}]);
+		</script>
+	</body>
+</html>
+```
+在这个样例中，我们编写了一个自定义插件，自定义了一个名为”test“的自定义标签，这个标签的作用是”等价于input标签“，即没有任何作用，就是演示插件的加载与使用。
+## 插件编写：
+1. 插件的编写只需要写一个对象并导出即可，甚至你可以用工厂模式使用参数创建许多功能类似但是有细微差异的插件，只要使用插件的时候是一个满足要求的对象即可。
+2. `name`，这个属性是用来定义自定义标签的名字的，不像HTML原生标准，这个名字是分大小写的。但是尽量不用用同名但是大小写不同的标签名，容易出现问题。
+3. `update`，这是必备方法，此方法接收一个`props`对象并返回一个`dom`元素，即自定义标签的产生的结构的最外层的”容器“。你可以使用各种工具方法来获得自定义标签传入的各种信息，然后根据这些信息创建一个一系列的普通标签，并将这些标签的根节点`dom`返回。注意这个`props`对象就是在标签上的属性，类似原生标签在标签上面的属性。
+4. `style`方法：用来处理样式，你可以通过`this.static_dom`来获取当前自定义标签的根节点。
+5. `collect`方法：用来收集信息，你需要以你需要的形式返回相应的信息。在此你可以递归的调用子节点的`collect`方法来获取子节点的信息。文本节点默认情况下返回一个对象，对象中`name`属性就是文本节点的`name`属性，`value`属性就是文本节点的内容。文本节点即`input`、`textarea`等。
+6. `this.children`属性，内有自己的直接的子标签的对象，这些子标签都具有上述三种方法可以递归调用，且建议一定要递归调用以保证信息链的完整。
+7. `this.fahter` 父标签的App对象。
+## 工具方法：
+1. 所有的工具方法都需要获得app对象之后使用作为对象方法进行使用。
+2. `initStyle(props)`，用来初始化style方法，请自定义style方法的时候调用，它将会给自定义标签赋予同名的class，以方便其他框架对自定义标签的样式干涉。
+3. `getStyleMap`获取css对自定义标签穿进来的自定义样式，注意自定义样式必须是--开头
+4. `getNodeByFoxID`用来通过id获取对应的app对象
+5. `getNodeByFoxClass`通过class获取对应的app对象
+6. `getChidrenPropsMap`获取一个Map，可以通过child的app对象找到其需要填入的props
+7. `setProp`给app对象所指的dom设置样式。
