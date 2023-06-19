@@ -68,9 +68,14 @@ function Web(setting) {
 			data: data
 		});
 
-		// 构造发送url
-		let url = port == 80 || port == 443 ? `http://${base_url}/func/${file_path}` : `http://${base_url}:${port}/func/${file_path}`;
-
+		const isHttps = window.location.protocol === "https:";
+		// 构造发送URL
+		let url = "";
+		if (isHttps) {
+			url = port == 80 || port == 443 ? `https://${base_url}/func/${file_path}` : `https://${base_url}:${port}/func/${file_path}`;
+		} else {
+			url = port == 80 || port == 443 ? `http://${base_url}/func/${file_path}` : `http://${base_url}:${port}/func/${file_path}`;
+		}
 		// 使用ajaxSync发送请求
 		let xhr = new XMLHttpRequest();
 		xhr.open('POST', url, false);
