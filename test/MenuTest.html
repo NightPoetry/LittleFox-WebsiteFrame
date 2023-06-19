@@ -9,18 +9,21 @@
 			<MenuLeft>
 				<MenuTitle>
 					<h1>title</h1>
-					<MenuItem>
-					<h2>item</h1>
+					<MenuTitle id="o_id">
+						<h1>title</h1>
+						<MenuItem click="alert(JSON.stringify(window.message.collect()))">
+							<h2>item</h2>
 						</MenuItem>
-						<MenuTitle>
-							<h1>title2
-					</h2>
+					</MenuTitle>
 					<MenuItem>
-					<h2>item</h1>
-						</MenuItem>
-				</MenuTitle>
+						<h2>item</h2>
+					</MenuItem>
 				</MenuTitle>
 			</MenuLeft>
+		</div>
+		<div id="message">
+			<input value="" name="name"/>
+			<input value="" name="sex"/>
 		</div>
 	</body>
 	<script src="../app.js"></script>
@@ -28,6 +31,38 @@
 		import Menu from "../示例插件/Menu.js"
 		let loader = new Loader();
 		let app = loader.load(document.getElementById("ok"), [...Menu]);
-		console.log(app.querySelector("menuleft"));
+		window.message = loader.load(document.getElementById("message"),[]);
+		
+		
 	</script>
+	<style>
+		*{
+			border: 0;
+			padding: 0;
+			margin: 0;
+		}
+		body,html{
+			height: 100%;
+			position: relative;
+		}
+		#ok{
+			height: 100%;
+		}
+		.MenuLeft {
+			background-color: black;
+			height: 100%;
+			width: 20%;
+			user-select: none;
+		}
+
+		.MenuTitle {
+			color: orange;
+			--interval: 30px;
+		}
+
+		.MenuItem {
+			color: white;
+			--interval: 30px;
+		}
+	</style>
 </html>

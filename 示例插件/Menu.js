@@ -35,6 +35,7 @@ const MenuLeft = {
 		child_doms.forEach((child_dom) => {
 			div.appendChild(child_dom);
 		});
+		this.static_dom = div;
 		return div;
 	}
 }
@@ -117,7 +118,19 @@ const MenuTitle = {
 				}
 			});
 		});
+		this.static_dom = container;
 		return container;
+	},
+	style(props) {
+		this.defaultStyleHandle();
+		let style_map = this.getStyleMap();
+		let interval = style_map.getPropertyValue("--interval");
+		let father_style = window.getComputedStyle(this.father.static_dom);
+		let father_text_indent = father_style.getPropertyValue("text-indent");
+		this.static_dom.style.textIndent = (parseInt(father_text_indent) + parseInt(interval)) + "px";
+		this.handleChildren(function(child) {
+			child.style();
+		});
 	}
 }
 /*
@@ -152,7 +165,8 @@ const MenuItem = {
 				if (typeof click === 'function') {
 					click();
 				} else if (typeof click === 'string') {
-					eval(click);
+					let c = new Function(click);
+					c();
 				} else {
 					throw new Error('MenuItem的点击事件非法');
 				}
@@ -160,7 +174,19 @@ const MenuItem = {
 		} else if (click === undefined) {
 			console.warn('MenuItem的点击事件不存在');
 		}
+		this.static_dom = container;
 		return container;
+	},
+	style(props) {
+		this.defaultStyleHandle();
+		let style_map = this.getStyleMap();
+		let interval = style_map.getPropertyValue("--interval");
+		let father_style = window.getComputedStyle(this.father.static_dom);
+		let father_text_indent = father_style.getPropertyValue("text-indent");
+		this.static_dom.style.textIndent = (parseInt(father_text_indent) + parseInt(interval)) + "px";
+		this.handleChildren(function(child) {
+			child.style();
+		});
 	}
 }
 export default [MenuLeft, MenuTitle, MenuItem]

@@ -1,13 +1,138 @@
 function isHTML(tag) {
-	let html5Tags = ['<input>', '<div>', '<html>', '<head>', '<title>', '<meta>', '<link>', '<style>', '<script>', '<noscript>', '<body>', '<header>', '<nav>', '<article>', '<section>', '<aside>', '<footer>', '<h1>', '<h2>', '<h3>', '<h4>', '<h5>', '<h6>', '<p>', '<a>', '<img>', '<video>', '<audio>', '<ul>', '<ol>', '<li>', '<dl>', '<dt>', '<dd>', '<table>', '<tr>', '<td>', '<th>', '<caption>', '<form>', '<input>', '<textarea>', '<button>', '<select>', '<option>', '<optgroup>', '<fieldset>', '<label>', '<output>', '<progress>', '<meter>', '<iframe>', '<canvas>', '<details>', '<summary>', '<menu>', '<svg>', '<math>', '<html>'];
+	let html5Tags = ['<span>', '<input>', '<div>', '<html>', '<head>', '<title>', '<meta>', '<link>', '<style>', '<script>', '<noscript>', '<body>', '<header>', '<nav>', '<article>', '<section>', '<aside>', '<footer>', '<h1>', '<h2>', '<h3>', '<h4>', '<h5>', '<h6>', '<p>', '<a>', '<img>', '<video>', '<audio>', '<ul>', '<ol>', '<li>', '<dl>', '<dt>', '<dd>', '<table>', '<tr>', '<td>', '<th>', '<caption>', '<form>', '<input>', '<textarea>', '<button>', '<select>', '<option>', '<optgroup>', '<fieldset>', '<label>', '<output>', '<progress>', '<meter>', '<iframe>', '<canvas>', '<details>', '<summary>', '<menu>', '<svg>', '<math>', '<html>'];
 	if (tag.nodeType === Node.TEXT_NODE) return true;
 	return html5Tags.indexOf(`<${tag.tagName.toLowerCase()}>`) !== -1;
 }
 
 function isTextElement(element) {
 	const tagName = element.nodeName.toLowerCase();
-	return tagName === 'p' || tagName.startsWith('h') || tagName === 'textarea' || tagName === 'pre' || tagName === 'code';
+	return tagName == "span" || tagName === 'p' || tagName.startsWith('h') || tagName === 'textarea' || tagName === 'pre' || tagName === 'code';
 }
+//Web便利工具
+function Web(setting) {
+	this.send = (data, file_path, func_name, base_url, port) => { //这个没测试
+		// 设置默认值
+		base_url = setting.base_url ?? base_url ?? '127.0.0.1';
+		port = setting.port ?? port ?? 2328;
+		data = data ?? {};
+
+		// 提取文件名
+		const fileNameWithoutExtension = getFileBaseName(file_path);
+
+		// 构造函数名
+		func_name = func_name ?? fileNameWithoutExtension;
+
+		// 构造发送参数
+		let send_data = JSON.stringify({
+			name: func_name,
+			data: data
+		});
+
+		// 构造发送url
+		let url = `http://${base_url}:${port}/func/${file_path}`;
+
+		// 返回一个 Promise 对象
+		return new Promise((resolve, reject) => {
+			// 使用ajax发送请求
+			let xhr = new XMLHttpRequest();
+			xhr.open('POST', url, true);
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState === XMLHttpRequest.DONE) {
+					if (xhr.status === 200) {
+						resolve(xhr.responseText);
+					} else {
+						reject(new Error('Request failed'));
+					}
+				}
+			};
+			xhr.send(send_data);
+		});
+	}
+	//data是个数组
+	this.sendSync = (data, file_path, func_name, base_url, port) => {
+		// 设置默认值
+		base_url = setting.base_url ?? base_url ?? '127.0.0.1';
+		port = setting.port ?? port ?? 2328;
+		data = data ?? {};
+
+		// 提取文件名
+		const fileNameWithoutExtension = getFileBaseName(file_path);
+
+		// 构造函数名
+		func_name = func_name ?? fileNameWithoutExtension;
+
+		// 构造发送参数
+		let send_data = JSON.stringify({
+			name: func_name,
+			data: data
+		});
+
+		// 构造发送url
+		let url = port == 80 || port == 443 ? `http://${base_url}/func/${file_path}` : `http://${base_url}:${port}/func/${file_path}`;
+
+		// 使用ajaxSync发送请求
+		let xhr = new XMLHttpRequest();
+		xhr.open('POST', url, false);
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.send(send_data);
+
+		if (xhr.status === 200 && xhr.readyState == 4) {
+			let return_data = ""
+			try {
+				return_data = JSON.parse(xhr.responseText);
+			} catch (e) {
+				// console.log("非JSON数据");
+				return_data = xhr.responseText;
+			}
+			return return_data;
+		} else {
+			throw new Error('Request failed');
+		}
+	}
+
+	// 获取不带扩展名的文件名
+	const getFileBaseName = (file_path) => {
+		const fileNameWithExtension = file_path.split('/').pop();
+		const fileNameWithoutExtension = fileNameWithExtension.split('.').shift();
+		return fileNameWithoutExtension;
+	}
+}
+// 接收端样例程序
+// const http = require('http');
+// const url = require('url');
+
+// http.createServer((req, res) => {
+// 	let query = url.parse(req.url, true).query;
+// 	let key = query.key;
+// 	let value = query.value;
+
+// 	// 根据key获取value，并进行相应处理
+// 	switch (key) {
+// 		case 'name':
+// 			console.log(`name: ${value}`);
+// 			break;
+// 		case 'age':
+// 			console.log(`age: ${parseInt(value)}`);
+// 			break;
+// 		case 'isStudent':
+// 			console.log(`isStudent: ${value === 'true'}`);
+// 			break;
+// 		default:
+// 			console.log(`unknown key: ${key}`);
+// 			break;
+// 	}
+
+// 	res.end();
+// }).listen(2328, '127.0.0.1', () => {
+// 	console.log('server is running on http://127.0.0.1:2328');
+// });
+
+const textTags = {
+	'INPUT': true,
+	'TEXTAREA': true,
+	'SPAN': true,
+};
 
 function APP(vdom) {
 	this.vdom = vdom;
@@ -18,25 +143,39 @@ function APP(vdom) {
 	this.update = (props) => { //更新,vdom是利用原生dom机制而创建的vdom，不是实际发挥作用的dom
 		let doms = [];
 		let dom = this.static_dom ?? document.createElement(vdom.tagName); // 创建相同类型的新dom
-		if (vdom.nodeType === Node.TEXT_NODE) {
+
+		function handleTextNode(vdom, props, dom) {
 			dom = this.static_dom ?? document.createTextNode("");
-			dom.textContent = props?.text;
-			if (!dom.textContent.trim()) dom.textContent = vdom.textContent;
-		} else if (dom.nodeType === Node.ELEMENT_NODE && (dom.tagName === 'INPUT' || dom.tagName === 'TEXTAREA')) {
-			dom.value = props.value;
-		} else {
-			//将props的属性赋值到dom上
-			for (let key in props) {
-				if (key === 'className') {
-					dom.setAttribute('class', props[key]);
-				} else if (key === 'style') {
-					const style_obj = props[key];
-					Object.keys(style_obj).forEach(attr => {
-						dom.style[attr] = style_obj[attr];
-					});
-				} else {
-					dom.setAttribute(key, props[key]);
-				}
+			dom.textContent = props?.text ?? vdom.textContent.trim();
+			return dom;
+		}
+
+		function handleTextElementNode(vdom, props, dom) {
+			if (textTags[dom.tagName]) {
+				let text = props?.value ?? dom.textContent ?? "";
+				dom.value = text
+				dom.setAttribute("value", text);
+				dom.innerHTML = text.replace(/\n/g, "<br>");
+			}
+			return dom;
+		}
+
+		if (vdom.nodeType === Node.TEXT_NODE) {
+			dom = handleTextNode(vdom, props, dom);
+		} else if (dom.nodeType === Node.ELEMENT_NODE) {
+			dom = handleTextElementNode(vdom, props, dom);
+		}
+		//将props的属性赋值到dom上
+		for (let key in props) {
+			if (key === 'className') {
+				dom.setAttribute('class', props[key]);
+			} else if (key === 'style') {
+				const style_obj = props[key];
+				Object.keys(style_obj).forEach(attr => {
+					dom.style[attr] = style_obj[attr];
+				});
+			} else {
+				dom.setAttribute(key, props[key]);
 			}
 		}
 		for (let child of this.children) {
@@ -62,19 +201,10 @@ function APP(vdom) {
 		return dom; //每个update都会返回被管辖的doms，作为默认的标签行为将会返回同类型标签的实例一个。
 	}
 	this.style = (props) => {
-		// 赋值针对性样式
-		function applyStyles(styles, element) {
-			for (let prop in styles) {
-				element.style[prop] = styles[prop];
-			}
-		}
-		applyStyles(props, this.static_dom);
-		// 递归调用 children 中的 style 方法
-		if (this.children) {
-			this.children.forEach(child => {
-				child.style();
-			});
-		}
+		this.defaultStyleHandle(props);
+		this.handleChildren(function(child) {
+			child.style();
+		});
 	};
 	this.collect = () => { //收集
 		let data = [];
@@ -113,12 +243,32 @@ function APP(vdom) {
 				child.initStyle();
 			});
 		}
+		return this;
+	}
+	this.defaultStyleHandle = (props) => {
+		// 赋值针对性样式
+		function applyStyles(styles, element) {
+			for (let prop in styles) {
+				element.style[prop] = styles[prop];
+			}
+		}
+		applyStyles(props, this.static_dom);
+		return this;
+	}
+	this.handleChildren = (call_func) => {
+		// 递归调用 children 中的 style 方法
+		if (this.children) {
+			this.children.forEach(child => {
+				call_func.call(this, child);
+			});
+		}
+		return this;
 	}
 	this.getStyleMap = () => {
 		return window.getComputedStyle(this.static_dom);
 	}
 	this.getNodeByFoxID = (fox_id) => {
-		if (this.vdom && this.vdom.getAttribute("fox_id") === fox_id) {
+		if (this.vdom && this.vdom?.getAttribute && this.vdom?.getAttribute("fox_id") === fox_id) {
 			return this; // 如果当前对象的vdom属性的fox_id和传入的fox_id相同，则返回当前对象
 		} else if (this.children && this.children.length > 0) {
 			for (let i = 0; i < this.children.length; i++) {
@@ -132,7 +282,7 @@ function APP(vdom) {
 	}
 	this.getNodeByFoxClass = (fox_class) => {
 		const result = [];
-		if (this.vdom && this.vdom.getAttribute("fox_class") === fox_class) {
+		if (this.vdom && this.vdom?.getAttribute && this.vdom.getAttribute("fox_class") === fox_class) {
 			result.push(this);
 		}
 		for (const child of this.children) {
@@ -173,6 +323,7 @@ function APP(vdom) {
 			return;
 		}
 		vdom.setAttribute(key, value);
+		return this;
 	};
 }
 
@@ -311,3 +462,4 @@ function Loader() {
 		return app;
 	}
 }
+//如果方法本身没有return值则返回app本身。
